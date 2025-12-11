@@ -1,14 +1,19 @@
 "use client";
 import { usePhotoboothStore } from "@/store/usePhotoboothStore";
-import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, CSSProperties } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { useCameraStore } from "@/store/useCameraStore";
+import { LAYOUTS } from "@/lib/layouts/layout";
+
 import { applyWarmSunFilter } from "@/lib/Filters/WarmSun";
 import { applyVintageSmoothFilter } from "@/lib/Filters/VintageSmooth";
 import { applyTwilightFilter } from "@/lib/Filters/TwilightFilter";
 import { applyDreamyGlowFilter } from "@/lib/Filters/DreamLike";
 import { applyMystFilter } from "@/lib/Filters/MystFilter";
-import { useCameraStore } from "@/store/useCameraStore";
+import { applyFujiFilmFilter } from "@/lib/Filters/FujiFilm";
+import Button from "@/common/button/Button";
+import { Camera } from "lucide-react";
 
 const filters = [
   { name: "None", value: "" },
@@ -18,234 +23,158 @@ const filters = [
   { name: "WarmSun", value: "warmsun" },
   { name: "Vintage", value: "vintage" },
   { name: "Twilight", value: "twilight" },
+  { name: "Film", value: "film" },
   { name: "Dream", value: "dream" },
   { name: "Myst", value: "myst" },
 ];
 
 const CapturePhoto = () => {
   const router = useRouter();
-  const pathname = usePathname();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const liveCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const filterPreviewCanvasRefs = useRef<
-    Record<string, HTMLCanvasElement | null>
-  >({});
+  const CanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const { layout, addPhoto } = usePhotoboothStore();
-  const slots = layout?.slots ?? 1;
-  const aspectRatio = layout?.aspectRatio ?? 4 / 3;
+  const { selectedLayoutId, addPhoto } = usePhotoboothStore();
+  const { setStream, stopStream } = useCameraStore();
 
-  const { setStream } = useCameraStore();
+  const currentLayout =
+    LAYOUTS.find((l) => l.id === selectedLayoutId) || LAYOUTS[0];
+  const slots = currentLayout.photoCount;
+  const aspectRatio = currentLayout.cameraRatio;
 
   const [currentCount, setCurrentCount] = useState(0);
   const [countdown, setCountdown] = useState(0);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showGetReady, setShowGetReady] = useState(false);
   const [sequenceStarted, setSequenceStarted] = useState(false);
-  const [permissionError, setPermissionError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState("");
   const [flash, setFlash] = useState(false);
 
-  const photoCountdownMax = 3;
+  
+  const cameraHeight = 400; 
+  const cameraWidth = cameraHeight * aspectRatio; 
 
-  const cameraHeight = 400;
-  const cameraWidth = cameraHeight * aspectRatio;
   const isCustomCanvasFilter = [
     "warmsun",
     "vintage",
     "twilight",
+    "film",
     "dream",
     "myst",
   ].includes(selectedFilter);
 
-  /** Start camera and save stream to ref */
+  // --- START CAMERA ---
   useEffect(() => {
     let mounted = true;
-
     async function startCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" },
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
           audio: false,
         });
-
-        setStream(stream);
-
-        if (!mounted) return;
-        streamRef.current = stream;
-        console.log("After turning ON", stream);
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play().catch((err) => {
-            if (err.name !== "AbortError") console.error(err);
-          });
+        if (!mounted) {
+          mediaStream.getTracks().forEach((t) => t.stop());
+          return;
         }
-        console.log("After turning ON2", stream);
+        setStream(mediaStream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          await videoRef.current.play();
+        }
       } catch (err) {
-        setPermissionError(err instanceof Error ? err.message : String(err));
+        console.error("Camera Error", err);
       }
     }
-
     startCamera();
-
     return () => {
       mounted = false;
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-      if (videoRef.current) videoRef.current.srcObject = null;
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
+      stopStream();
     };
-  }, [pathname]);
+  }, [setStream, stopStream]);
 
-  /** Stop camera on route changes */
+  // --- LIVE RENDER LOOP ---
   useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
+    let animationFrameId: number;
+
+    const render = () => {
+      const video = videoRef.current;
+      const canvas = CanvasRef.current;
+
+      if (video && canvas && video.readyState === 4) {
+        if (canvas.width !== video.videoWidth) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+        }
+
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.save();
+          ctx.translate(canvas.width, 0); 
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          ctx.restore();
+
+          if (isCustomCanvasFilter) {
+            if (selectedFilter === "warmsun")
+              applyWarmSunFilter(ctx, canvas, 1);
+            else if (selectedFilter === "vintage")
+              applyVintageSmoothFilter(ctx, canvas, 1);
+            else if (selectedFilter === "twilight")
+              applyTwilightFilter(ctx, canvas, 1);
+            else if (selectedFilter === "film")
+              applyFujiFilmFilter(ctx, canvas, 1);
+            else if (selectedFilter === "dream")
+              applyDreamyGlowFilter(ctx, canvas, 1);
+            else if (selectedFilter === "myst") applyMystFilter(ctx, canvas, 1);
+          } else if (selectedFilter) {
+            ctx.save();
+            ctx.filter = selectedFilter;
+            ctx.drawImage(canvas, 0, 0);
+            ctx.restore();
+          }
+        }
       }
-      if (videoRef.current) videoRef.current.srcObject = null;
-    };
-  }, [pathname]);
-
-  useEffect(() => {
-    return () => {
-      useCameraStore.getState().stopStream();
-    };
-  }, []);
-  
-
-  /** Live canvas rendering for custom filters */
-  useEffect(() => {
-    const video = videoRef.current;
-    const canvas = liveCanvasRef.current;
-    if (!video || !canvas) return;
-
-    const renderFrame = () => {
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      if (
-        canvas.width !== video.videoWidth ||
-        canvas.height !== video.videoHeight
-      ) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-      }
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      if (selectedFilter === "warmsun") applyWarmSunFilter(ctx, canvas, 1);
-      else if (selectedFilter === "vintage")
-        applyVintageSmoothFilter(ctx, canvas, 1);
-      else if (selectedFilter === "twilight")
-        applyTwilightFilter(ctx, canvas, 1);
-      else if (selectedFilter === "dream")
-        applyDreamyGlowFilter(ctx, canvas, 1);
-      else if (selectedFilter === "myst") applyMystFilter(ctx, canvas, 1);
-
-      animationFrameRef.current = requestAnimationFrame(renderFrame);
+      animationFrameId = requestAnimationFrame(render);
     };
 
-    renderFrame();
+    render();
 
-    return () => {
-      if (animationFrameRef.current)
-        cancelAnimationFrame(animationFrameRef.current);
-    };
-  }, [selectedFilter]);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [selectedFilter, isCustomCanvasFilter]);
 
-  /** Countdown logic */
-  useEffect(() => {
-    if (!isCapturing) return;
-    if (countdown > photoCountdownMax) {
-      handleFlashAndCapture();
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setCountdown((c) => c + 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [isCapturing, countdown]);
-
-  /** Start photo sequence */
+  // --- SEQUENCE LOGIC ---
   const startSequence = () => {
     setSequenceStarted(true);
     startPhotoCountdown(currentCount);
   };
 
-  const startPhotoCountdown = (photoIndex: number) => {
-    if (photoIndex >= slots) return;
+  const startPhotoCountdown = (index: number) => {
+    if (index >= slots) return;
     setShowGetReady(true);
     setCountdown(0);
     setIsCapturing(false);
-
     setTimeout(() => {
       setShowGetReady(false);
       setCountdown(1);
       setIsCapturing(true);
-    }, 1000);
+    }, 1500);
   };
 
-  /** Capture photo with filters applied */
-  const capturePhoto = () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const canvas = canvasRef.current ?? document.createElement("canvas");
-    canvasRef.current = canvas;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    switch (selectedFilter) {
-      case "warmsun":
-        applyWarmSunFilter(ctx, canvas, 1);
-        break;
-      case "vintage":
-        applyVintageSmoothFilter(ctx, canvas, 1);
-        break;
-      case "twilight":
-        applyTwilightFilter(ctx, canvas, 1);
-        break;
-      case "dream":
-        applyDreamyGlowFilter(ctx, canvas, 1);
-        break;
-      case "myst":
-        applyMystFilter(ctx, canvas, 1);
-        break;
-      default:
-        if (selectedFilter) {
-          ctx.filter = selectedFilter;
-          ctx.drawImage(canvas, 0, 0);
-          ctx.filter = "none";
-        }
+  // --- COUNTDOWN EFFECT ---
+  useEffect(() => {
+    if (!isCapturing) return;
+    if (countdown > 3) {
+      handleFlashAndCapture();
+      return;
     }
+    const timer = setTimeout(() => setCountdown((c) => c + 1), 1000);
+    return () => clearTimeout(timer);
+  }, [isCapturing, countdown]);
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
-    addPhoto({
-      id: uuidv4(),
-      dataUrl,
-      width: canvas.width,
-      height: canvas.height,
-    });
-  };
-
-  /** Flash and next photo sequence */
+  // --- CAPTURE & FLASH ---
   const handleFlashAndCapture = () => {
     setFlash(true);
     setIsCapturing(false);
@@ -253,126 +182,99 @@ const CapturePhoto = () => {
     setTimeout(() => {
       capturePhoto();
       setFlash(false);
-      const nextPhoto = currentCount + 1;
-      setCurrentCount(nextPhoto);
+      const next = currentCount + 1;
+      setCurrentCount(next);
 
-      if (nextPhoto < slots) {
-        startPhotoCountdown(nextPhoto);
+      if (next < slots) {
+        startPhotoCountdown(next);
       } else {
-        // Stop camera completely before navigating
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop());
-          streamRef.current = null;
-        }
-        if (videoRef.current) videoRef.current.srcObject = null;
-
+        stopStream();
         router.push("/decorate-photos");
       }
-    }, 500);
+    }, 200);
   };
 
-  const getOverlayText = () => {
-    if (showGetReady) return `Get Ready for Photo ${currentCount + 1}`;
-    if (isCapturing && countdown <= photoCountdownMax) return countdown;
-    return "";
+  const capturePhoto = () => {
+    const previewCanvas = CanvasRef.current;
+    if (!previewCanvas) return;
+
+    const dataUrl = previewCanvas.toDataURL("image/jpeg", 0.95);
+    addPhoto({ id: uuidv4(), dataUrl });
   };
 
   return (
-    <div className="flex flex-col items-center px-8 pb-8 pt-[100px] space-y-4 bg-[#FFDBE9] min-h-screen">
+    <div className="flex flex-col justify-center items-center py-10 min-h-screen bg-[#F5F5DA] gap-4 px-4">
       <div
-        className="relative rounded-lg border-2 border-black overflow-hidden"
-        style={{ width: cameraWidth, height: cameraHeight }}
+        className="relative border-4 border-[#CA152A] shadow-xl overflow-hidden bg-black mb-4 w-full md:w-[var(--w)] md:h-[var(--h)]"
+        style={{ 
+          aspectRatio: aspectRatio,
+          '--w': `${cameraWidth}px`,
+          '--h': `${cameraHeight}px`
+        } as CSSProperties} 
       >
-        <video
-          ref={videoRef}
+        <video ref={videoRef} className="hidden" muted playsInline />
+        <canvas
+          ref={CanvasRef}
           className="w-full h-full object-cover"
-          playsInline
-          muted
-          style={{
-            filter: isCustomCanvasFilter ? "none" : selectedFilter,
-            display: isCustomCanvasFilter ? "none" : "block",
-          }}
         />
-        {isCustomCanvasFilter && (
-          <canvas ref={liveCanvasRef} className="w-full h-full object-cover" />
-        )}
-
         {(showGetReady || isCapturing) && (
-          <div className="absolute inset-0 flex items-center justify-center text-white text-xl font-semibold z-10">
-            {getOverlayText()}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-10">
+            <span className="text-[#F5F5DA] text-6xl font-bold drop-shadow-md">
+              {showGetReady ? `Photo ${currentCount + 1}` : countdown}
+            </span>
           </div>
         )}
-
         {flash && (
-          <div className="absolute inset-0 bg-white opacity-100 animate-[flash_0.5s] pointer-events-none z-20" />
+          <div className="absolute inset-0 bg-white z-50 animate-pulse" />
         )}
       </div>
 
+      {/* CONTROLS */}
       {!sequenceStarted ? (
-        <button
-          onClick={startSequence}
-          className="px-6 py-2 bg-[#FFBBE9] text-white rounded-md cursor-pointer hover:bg-[#FF9FD9] transition-colors flex items-center gap-2"
-        >
-          Start 📸
-        </button>
+        <Button variant="primary" onClick={startSequence} className="px-4">
+          START{" "}
+          <span className="pl-3">
+            <Camera className="text-[#F5F5DA]" />
+          </span>
+        </Button>
       ) : (
-        <button className="px-6 py-2 bg-[#FFBBE9] text-white rounded-md cursor-pointer hover:bg-[#FF9FD9] transition-colors">
-          Capturing
+        <button className="group relative h-9 md:h-10 overflow-hidden cursor-pointer border-2 transition-all duration-300 text-sm md:text-xl bg-[#CA152A] text-[#F5F5DA] border-[#CA152A] px-4">
+          Capturing photo {currentCount + 1} of {slots}
         </button>
       )}
 
-      {/* Filters */}
+      {/* FILTERS */}
       <div className="flex gap-4 mt-4 flex-wrap justify-center">
         {filters.map((f) => (
-          <div
+          <button
             key={f.name}
             onClick={() => setSelectedFilter(f.value)}
-            className="flex flex-col items-center gap-1 cursor-pointer"
+            className="flex flex-col items-center gap-2 min-w-[80px] transition-transform active:scale-95 group"
           >
             <div
-              className={`w-18 h-18 rounded-sm transition-all border-2 overflow-hidden ${
+              className={`w-18 h-18 overflow-hidden flex items-center justify-center bg-white transition-all duration-200 ${
                 selectedFilter === f.value
-                  ? " border-black shadow-lg scale-102"
-                  : "hover:border-gray-400"
+                  ? "border-3 border-[#F9CBD6] scale-102"
+                  : "border-2 border-[#CA152A] group-hover:border-[#CA152A]"
               }`}
             >
-              <canvas
-                ref={(el) => {
-                  if (el) filterPreviewCanvasRefs.current[f.name] = el;
-                }}
-                width={80}
-                height={80}
-                className="w-full h-full object-cover"
-              />
+              <div className="w-full h-full bg-white flex items-center justify-center text-xs text-gray-400">
+                Img
+              </div>
             </div>
+
             <span
-              className={`text-xs font-medium ${
+              className={`text-xs tracking-wide ${
                 selectedFilter === f.value
-                  ? "text-black font-bold"
-                  : "text-gray-700"
+                  ? "font-bold text-[#CA152A]"
+                  : "font-medium text-[#CA152A]"
               }`}
             >
               {f.name}
             </span>
-          </div>
+          </button>
         ))}
       </div>
-
-      <canvas ref={canvasRef} className="hidden" />
-
-      <style jsx>{`
-        @keyframes flash {
-          0% {
-            opacity: 1;
-          }
-          100% {
-            opacity: 0;
-          }
-        }
-        .animate-[flash_0.5s] {
-          animation: flash 0.5s forwards;
-        }
-      `}</style>
     </div>
   );
 };
