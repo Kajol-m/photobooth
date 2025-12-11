@@ -23,7 +23,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const getButtonClass = (variant: ButtonVariant) => {
     // Shared base classes for layout and animation container
-    const baseClasses = "group relative h-9 md:h-10  w-28 md:w-40 overflow-hidden cursor-pointer border-2 transition-all duration-300 text-sm md:text-xl";
+    const baseClasses = "group relative h-9 md:h-10  w-28 md:w-45 overflow-hidden cursor-pointer border-2 transition-all duration-300 text-sm md:text-xl";
     
     switch (variant) {
       case "primary": 

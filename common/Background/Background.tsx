@@ -96,7 +96,7 @@
 import { useState } from "react";
 import { usePhotoboothStore } from "@/store/usePhotoboothStore";
 
-const presetColors = ["#F8D7DA", "#D1E7DD", "#CCE5FF", "#FFF3CD"];
+const presetColors = ["#CA152A","#F8D7DA", "#D1E7DD", "#CCE5FF", "#FFF3CD"];
 
 const backgroundImages = [
   "/assets/backgrounds/shells.jpg",
@@ -124,9 +124,9 @@ const BackgroundPicker = () => {
   };
 
   return (
-    <div className="p-6 flex flex-col gap-6 items-start bg-white rounded-2xl shadow-md w-full max-w-md mx-auto">
-      <h2 className="text-2xl font-semibold text-gray-800">
-        Background Picker
+    <div className="p-4 flex flex-col gap-3 items-start bg-[#F5F5DA] w-full border-3 border-[#CA152A]">
+      <h2 className="text-xl font-semibold text-[#CA152A]">
+        BACKGROUND
       </h2>
 
       {/* Preset Colors */}
@@ -135,16 +135,16 @@ const BackgroundPicker = () => {
           <button
             key={color}
             onClick={() => handlePresetSelect(color)}
-            className={`w-10 h-10 rounded-lg border transition-all duration-150 ${
+            className={`w-10 h-10 border transition-all duration-150 ${
               photoTraits.backgroundColor === color
-                ? "ring-2 ring-blue-500 scale-105"
+                ? "ring-2 ring-[#CA152A] scale-105"
                 : "hover:scale-105"
             }`}
             style={{ backgroundColor: color }}
           />
         ))}
         <div
-          className="relative w-10 h-10 rounded-lg border overflow-hidden cursor-pointer hover:scale-105"
+          className="relative w-10 h-10 border overflow-hidden cursor-pointer hover:scale-105"
           style={{
             backgroundImage: "url('/assets/colorpicker.png')",
             backgroundPosition: "center",
@@ -161,15 +161,15 @@ const BackgroundPicker = () => {
 
       {/* Background Images */}
       <div>
-        <p className="text-sm text-gray-600 mb-2">Background Images:</p>
+        <p className="text-sm text-[#CA152A] mb-2">Background Images:</p>
         <div className="flex flex-wrap gap-3">
           {backgroundImages.map((img) => (
             <div
               key={img}
               onClick={() => handleImageSelect(img)}
-              className={`w-10 h-10 rounded-lg border overflow-hidden cursor-pointer transition-all duration-150 ${
+              className={`w-10 h-10 border overflow-hidden cursor-pointer transition-all duration-150 ${
                 photoTraits.backgroundColor === img
-                  ? "ring-2 ring-blue-500 scale-105"
+                  ? "ring-2 ring-[#CA152A] scale-105"
                   : "hover:scale-105"
               }`}
             >
