@@ -22,8 +22,10 @@ const Button: React.FC<ButtonProps> = ({
   ...rest
 }) => {
   const getButtonClass = (variant: ButtonVariant) => {
-    // Shared base classes for layout and animation container
-    const baseClasses = "group relative h-9 md:h-10  w-28 md:w-45 overflow-hidden cursor-pointer border-2 transition-all duration-300 text-sm md:text-xl";
+    // 1. REMOVED fixed w/h classes (w-28, h-9, etc.)
+    // 2. ADDED padding (px-6 py-1.5) and min-width for consistent sizing
+    const baseClasses = 
+      "group relative inline-flex items-center justify-center overflow-hidden cursor-pointer border-2  text-sm md:text-xl font-medium px-8 md:px-8 whitespace-nowrap";
     
     switch (variant) {
       case "primary": 
@@ -45,6 +47,17 @@ const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       {...rest}
     >
+      {/* 3. GHOST ELEMENT FOR SIZING
+         This invisible span sits normally in the DOM flow. 
+         It forces the button to be exactly as wide/tall as the text requires. 
+      */}
+      <span className="invisible opacity-0 select-none">
+        {children}
+      </span>
+
+      {/* 4. ANIMATION CONTAINER 
+         Kept absolute to overlay the ghost element perfectly.
+      */}
       <div className="absolute inset-0 h-full w-full transition-all duration-300 ease-out group-hover:translate-y-full">
         {/* Visible Text */}
         <span className="absolute h-full w-full flex items-center justify-center">

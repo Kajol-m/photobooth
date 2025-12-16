@@ -96,7 +96,7 @@
 import { useState } from "react";
 import { usePhotoboothStore } from "@/store/usePhotoboothStore";
 
-const presetColors = ["#CA152A","#F8D7DA", "#D1E7DD", "#CCE5FF", "#FFF3CD"];
+const presetColors = ["#CA152A", "#F5F5DA","#F8D7DA", "#D1E7DD", "#CCE5FF"];
 
 const backgroundImages = [
   "/assets/backgrounds/shells.jpg",

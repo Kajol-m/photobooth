@@ -1,6 +1,5 @@
 "use client";
 import Button from "@/common/button/Button";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Lottie from "lottie-react";
 import photoboothlg from "@/public/assets/photobooth-lg.json";
@@ -12,7 +11,7 @@ const Landing = () => {
   const router = useRouter();
 
   const handleEnter = () => {
-    router.push("/select-layout"); // Navigate to SelectLayout page
+    router.push("/select-layout"); 
   };
   return (
     <>

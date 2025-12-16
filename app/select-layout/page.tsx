@@ -1,142 +1,168 @@
-// "use client";
-
-// import { useRouter } from "next/navigation";
-// import { useEffect } from "react";
-// import LayoutCard from "@/common/layouts/LayoutCard"; // We will update this next
-// import { usePhotoboothStore } from "@/store/usePhotoboothStore";
-// import { useCameraStore } from "@/store/useCameraStore";
-// import { LAYOUTS } from "@/lib/layouts/layout"; // 👈 Import from new constants
-
-// const SelectLayout = () => {
-//   const router = useRouter();
-  
-//   // 👈 Use the new store action
-//   const setSelectedLayoutId = usePhotoboothStore((state) => state.setSelectedLayoutId);
-//   const currentLayoutId = usePhotoboothStore((state) => state.selectedLayoutId);
-
-//   const handleLayoutSelect = (layoutId: string) => {
-//     // 👈 We only need to pass the ID now
-//     setSelectedLayoutId(layoutId);
-//     router.push("/select-filters");
-//   };
-
-//   const { stopStream } = useCameraStore();
-//   useEffect(() => {
-//     stopStream();
-//   }, [stopStream]);
-
-//   // Split layouts: First 3 in row 1, the rest in row 2
-//   const row1Layouts = LAYOUTS.slice(0, 3);
-//   const row2Layouts = LAYOUTS.slice(3);
-
-//   return (
-//     <div className="relative bg-[#FFDBE9] px-8 pt-6 pb-[100px] min-h-screen">
-//       {/* Header */}
-//       <header className="flex flex-col justify-center items-center text-center h-32">
-//         <p className="text-3xl tracking-wide font-semibold">Choose Layout</p>
-//         <p className="text-sm text-gray-600">
-//           The layouts are visual representations and not the actual size.
-//         </p>
-//       </header>
-
-//       {/* Layout Rows */}
-//       {[row1Layouts, row2Layouts].map((row, idx) => (
-//         <div key={idx} className="flex justify-center gap-8 mb-8 flex-wrap">
-//           {row.map((layout) => (
-//             <LayoutCard
-//               key={layout.id}
-//               layout={layout} // 👈 Pass the whole config object
-//               isSelected={currentLayoutId === layout.id}
-//               onSelect={() => handleLayoutSelect(layout.id)}
-//             />
-//           ))}
-//         </div>
-//       ))}
-
-//       {/* Footer */}
-//       <footer className="absolute bottom-0 right-0 p-4 text-xs text-gray-700">
-//         Visual representations created with CSS Grid.
-//       </footer>
-//     </div>
-//   );
-// };
-
-// export default SelectLayout;
-
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import LayoutCard from "@/common/layouts/LayoutCard"; 
+import { useEffect, useState, useRef } from "react";
 import { usePhotoboothStore } from "@/store/usePhotoboothStore";
 import { useCameraStore } from "@/store/useCameraStore";
-import { LAYOUTS } from "@/lib/layouts/layout"; // 👈 Import from your new constants
+import { LAYOUTS } from "@/lib/layouts/layout";
+import { toast } from "sonner";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
+import Flickity from "flickity";
+import "flickity/css/flickity.css";
+import Footer from "@/common/Footer/Footer";
+import Button from "@/common/button/Button";
 
 const SelectLayout = () => {
   const router = useRouter();
-  
-  // 1. Store Hooks
-  const setSelectedLayoutId = usePhotoboothStore((state) => state.setSelectedLayoutId);
+
+  const setSelectedLayoutId = usePhotoboothStore(
+    (state) => state.setSelectedLayoutId
+  );
   const currentLayoutId = usePhotoboothStore((state) => state.selectedLayoutId);
   const { stopStream } = useCameraStore();
 
-  // 2. Selection Handler
-  const handleLayoutSelect = (layoutId: string) => {
-    setSelectedLayoutId(layoutId); // 👈 Store the ID
-    router.push("/select-filters"); // or "/select-filters" depending on your flow
-  };
+  const flickityRef = useRef<Flickity | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // 3. Cleanup Camera on Mount
+  const initialIndex = Math.max(
+    0,
+    LAYOUTS.findIndex((l) => l.id === currentLayoutId)
+  );
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    flickityRef.current = new Flickity(containerRef.current, {
+      initialIndex: initialIndex,
+      accessibility: true,
+      pageDots: false,
+      prevNextButtons: false,
+      draggable: true,
+      wrapAround: true,
+      cellAlign: "center",
+      contain: true,
+      friction: 0.28,
+      selectedAttraction: 0.025,
+    });
+
+    flickityRef.current.on("change", (index: number) => {
+      setActiveIndex(index);
+      const layout = LAYOUTS[index];
+      if (layout) {
+        setSelectedLayoutId(layout.id);
+      }
+    });
+
+    return () => {
+      flickityRef.current?.destroy();
+    };
+  }, []);
+
   useEffect(() => {
     stopStream();
   }, [stopStream]);
 
-  // Optional: Group layouts if you have many (e.g., first 3, then the rest)
-  const row1 = LAYOUTS.slice(0, 3);
-  const row2 = LAYOUTS.slice(3);
+  const handlePrev = () => flickityRef.current?.previous();
+  const handleNext = () => flickityRef.current?.next();
+
+  const handleTakePhotos = () => {
+    if (!currentLayoutId) {
+      toast.error("Please select a layout first.");
+    } else {
+      router.push("/capture-photos");
+    }
+  };
+
+  const handleUploadPhotos = () => {
+    if (!currentLayoutId) {
+      toast.error("Please select a layout first.");
+    } else {
+      router.push("/upload-photos");
+    }
+  };
 
   return (
-    <div className="relative bg-[#F5F5DA] px-8 pt-10 pb-[100px] min-h-screen flex flex-col items-center">
-      
-      {/* Header */}
-      <header className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-800 tracking-wide mb-2">Choose Your Layout</h1>
-        <p className="text-gray-600">Select a grid to start your session</p>
-      </header>
-
-      {/* Grid Container */}
-      <div className="w-full max-w-6xl flex flex-col gap-10 items-center">
-        
-        {/* Row 1 */}
-        <div className="flex flex-wrap justify-center gap-8">
-          {row1.map((layout) => (
-            <LayoutCard
-              key={layout.id}
-              layout={layout}
-              isSelected={currentLayoutId === layout.id}
-              onSelect={() => handleLayoutSelect(layout.id)}
-            />
-          ))}
+    <div className="relative bg-[#F5F5DA] min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
+      <div className="mb-6 mt-auto w-full flex justify-center">
+        <div className="bg-[#C9212D] text-[#F5F5DA] px-8 py-3 md:px-12 md:py-4 text-base md:text-xl tracking-[0.2em] font-medium uppercase border border-[#C9212D] text-center w-full md:w-auto">
+          SELECT LAYOUT
         </div>
-
-        {/* Row 2 */}
-        <div className="flex flex-wrap justify-center gap-8">
-          {row2.map((layout) => (
-            <LayoutCard
-              key={layout.id}
-              layout={layout}
-              isSelected={currentLayoutId === layout.id}
-              onSelect={() => handleLayoutSelect(layout.id)}
-            />
-          ))}
-        </div>
-
       </div>
 
-      {/* Footer */}
-      <footer className="fixed bottom-4 right-4 text-xs text-gray-500 bg-white/50 px-3 py-1 rounded-full">
-        Previews generated via CSS Grid
-      </footer>
+      {/* --- CAROUSEL WRAPPER --- */}
+      <div className="relative w-full max-w-5xl border-2 border-[#C9212D] bg-[#F5F5DA] p-2 md:p-12">
+        <div className="flex items-center gap-2 md:gap-8 h-full relative">
+          {/* Left Arrow */}
+          <button
+            onClick={handlePrev}
+            className="shrink-0 text-[#C9212D] hover:bg-[#C9212D] hover:text-white transition-colors p-1 md:p-2 border border-transparent hover:border-[#C9212D] z-20"
+          >
+            <ChevronLeft className="w-8 h-8 md:w-12 md:h-12" strokeWidth={2} />
+          </button>
+          <div className="flex-1 min-w-0 overflow-hidden" ref={containerRef}>
+            {LAYOUTS.map((layout, index) => (
+              <div
+                key={layout.id}
+                className="w-full flex flex-col items-center gap-4 md:gap-6 opacity-40 transition-opacity duration-300 is-selected:opacity-100"
+                style={{ opacity: index === activeIndex ? 1 : 0.4 }}
+              >
+                {/* Image Container */}
+                <div className="p-2  w-full flex justify-center items-center h-[300px] md:h-[450px]">
+                  <div className="relative w-full h-full max-w-[280px] md:max-w-none">
+                    <Image
+                      src={layout.previewImage}
+                      alt={layout.label}
+                      fill
+                      className="object-contain pointer-events-none"
+                      priority={index === 0}
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="text-center space-y-1 md:space-y-2">
+                  <h2 className="text-[#C9212D] text-lg md:text-2xl font-bold tracking-[0.1em] uppercase">
+                    {layout.label}
+                  </h2>
+                  <p className="text-[#C9212D]/70 text-xs md:text-sm tracking-widest font-medium uppercase">
+                    {layout.photoCount} PHOTO{layout.photoCount > 1 ? "S" : ""}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Right Arrow */}
+          <button
+            onClick={handleNext}
+            className="shrink-0 text-[#C9212D] hover:bg-[#C9212D] hover:text-white transition-colors p-1 md:p-2 border border-transparent hover:border-[#C9212D] z-20"
+          >
+            <ChevronRight className="w-8 h-8 md:w-12 md:h-12" strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
+      {/* --- FOOTER ACTIONS --- */}
+      <div className="mt-8 md:mt-12 flex flex-col sm:flex-row gap-4 md:gap-12 w-full max-w-4xl justify-center px-4 md:px-0">
+        <Button
+          variant="primary"
+          onClick={handleTakePhotos}
+          className="py-3"
+        >
+          TAKE PHOTOS
+        </Button>
+
+        <Button
+          variant="secondary" // Assuming you have a secondary or similar variant
+          onClick={handleUploadPhotos}
+          className="py-3"
+        >
+          UPLOAD PHOTOS
+        </Button>
+      </div>
+      <Footer />
     </div>
   );
 };
