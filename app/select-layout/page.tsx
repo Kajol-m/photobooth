@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Flickity from "flickity";
-import "flickity/css/flickity.css";
 import Footer from "@/common/Footer/Footer";
 import Button from "@/common/button/Button";
 
@@ -32,28 +31,36 @@ const SelectLayout = () => {
   const [activeIndex, setActiveIndex] = useState(initialIndex);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
 
-    flickityRef.current = new Flickity(containerRef.current, {
-      initialIndex: initialIndex,
-      accessibility: true,
-      pageDots: false,
-      prevNextButtons: false,
-      draggable: true,
-      wrapAround: true,
-      cellAlign: "center",
-      contain: true,
-      friction: 0.28,
-      selectedAttraction: 0.025,
-    });
+    if (!container) return;
 
-    flickityRef.current.on("change", (index: number) => {
-      setActiveIndex(index);
-      const layout = LAYOUTS[index];
-      if (layout) {
-        setSelectedLayoutId(layout.id);
-      }
-    });
+    const initFlickity = async () => {
+      const Flickity = (await import("flickity")).default;
+
+      flickityRef.current = new Flickity(container, {
+        initialIndex: initialIndex,
+        accessibility: true,
+        pageDots: false,
+        prevNextButtons: false,
+        draggable: true,
+        wrapAround: true,
+        cellAlign: "center",
+        contain: true,
+        friction: 0.28,
+        selectedAttraction: 0.025,
+      });
+
+      flickityRef.current.on("change", (index: number) => {
+        setActiveIndex(index);
+        const layout = LAYOUTS[index];
+        if (layout) {
+          setSelectedLayoutId(layout.id);
+        }
+      });
+    };
+
+    initFlickity();
 
     return () => {
       flickityRef.current?.destroy();
@@ -146,11 +153,7 @@ const SelectLayout = () => {
 
       {/* --- FOOTER ACTIONS --- */}
       <div className="mt-8 md:mt-12 flex flex-col sm:flex-row gap-4 md:gap-12 w-full max-w-4xl justify-center px-4 md:px-0">
-        <Button
-          variant="primary"
-          onClick={handleTakePhotos}
-          className="py-3"
-        >
+        <Button variant="primary" onClick={handleTakePhotos} className="py-3">
           TAKE PHOTOS
         </Button>
 
