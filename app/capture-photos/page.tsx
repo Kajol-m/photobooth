@@ -14,6 +14,7 @@ import { applyMystFilter } from "@/lib/Filters/MystFilter";
 import { applyFujiFilmFilter } from "@/lib/Filters/FujiFilm";
 import Button from "@/common/button/Button";
 import { Camera } from "lucide-react";
+import Footer from "@/common/Footer/Footer";
 
 const filters = [
   { name: "None", value: "" },
@@ -203,6 +204,7 @@ const CapturePhoto = () => {
   };
 
   return (
+    <>
     <div className="flex flex-col justify-center items-center py-10 min-h-screen bg-[#F5F5DA] gap-4 px-4">
       <div
         className="relative border-4 border-[#CA152A] shadow-xl overflow-hidden bg-black mb-4 w-full md:w-[var(--w)] md:h-[var(--h)]"
@@ -238,9 +240,9 @@ const CapturePhoto = () => {
           </span>
         </Button>
       ) : (
-        <button className="group relative h-9 md:h-10 overflow-hidden cursor-pointer border-2 transition-all duration-300 text-sm md:text-xl bg-[#CA152A] text-[#F5F5DA] border-[#CA152A] px-4">
+        <Button variant="primary" className="py-3">
           Capturing photo {currentCount + 1} of {slots}
-        </button>
+        </Button>
       )}
 
       {/* FILTERS */}
@@ -276,6 +278,8 @@ const CapturePhoto = () => {
         ))}
       </div>
     </div>
+    <Footer/>
+    </>
   );
 };
 

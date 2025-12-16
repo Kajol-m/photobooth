@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export type Photo = {
   id: string;
-  dataUrl: string; 
+  dataUrl: string;
   width?: number;
   height?: number;
 };
@@ -22,39 +22,6 @@ export type LayoutOption = {
   aspectRatio: number; // e.g. 2:3 -> 2/3
 };
 
-// export type StickerProps = {
-//   src: string;
-//   width?: number;
-//   height?: number;
-// };
-
-// export type TextProps = {
-//   text: string;
-//   color?: string;
-//   fontSize?: number;
-//   fontFamily?: string;
-// };
-
-// export type Decoration =
-//   | {
-//       id: string;
-//       type: "sticker";
-//       x: number;
-//       y: number;
-//       scale: number;
-//       rotation: number;
-//       props: StickerProps;
-//     }
-//   | {
-//       id: string;
-//       type: "text";
-//       x: number;
-//       y: number;
-//       scale: number;
-//       rotation: number;
-//       props: TextProps;
-//     };
-
 export type StickerProps = {
   src: string;
 };
@@ -71,63 +38,48 @@ export type Decoration =
   | {
       id: string;
       type: "sticker";
-      transform: string; // 👈 KEY CHANGE: Stores CSS transform string
+      transform: string;
       props: StickerProps;
     }
   | {
       id: string;
       type: "text";
-      transform: string; // 👈 KEY CHANGE
+      transform: string;
       props: TextProps;
     };
 
-/* ----------------------------------------
-   🏪 Store Type
----------------------------------------- */
 type Store = {
-  // layout?: LayoutOption;
   selectedLayoutId: string;
   filter: string; // e.g., 'none', 'vintage', 'bw', etc.
   photos: Photo[];
   decorations: Decoration[];
   photoTraits: PhotoTraits;
-
-  // actions
-  // setLayout: (layout: LayoutOption) => void;
   setSelectedLayoutId: (id: string) => void;
   setFilter: (filter: string) => void;
   addPhoto: (photo: Photo) => void;
   replacePhotoAt: (index: number, photo: Photo) => void;
   clearPhotos: () => void;
   addDecoration: (decoration: Decoration) => void;
-  // updateDecoration: <T extends Decoration["type"]>(
-  //   id: string,
-  //   patch: Partial<Extract<Decoration, { type: T }>>
-  // ) => void;
   updateDecoration: (id: string, transform: string) => void;
   removeDecoration: (id: string) => void;
   setPhotoTraits: (traits: Partial<PhotoTraits>) => void;
 };
 
-/* ----------------------------------------
-   🧠 Zustand Store Implementation
----------------------------------------- */
 export const usePhotoboothStore = create<Store>((set, get) => ({
-  // layout: undefined,
   selectedLayoutId: "polaroid",
   filter: "none",
   photos: [],
   decorations: [],
   photoTraits: {
-    backgroundColor: "#F8D7DA",
+    backgroundColor: "#CA152A",
     textOption: "photobooth",
     dateOption: true,
     timeOption: true,
-    textColor: "black",
+    textColor: "#F5F5DA",
   },
 
-  // setLayout: (layout) => set({ layout, photos: [], decorations: [] }),
-  setSelectedLayoutId: (id) => set({ selectedLayoutId: id, photos: [], decorations: [] }),
+  setSelectedLayoutId: (id) =>
+    set({ selectedLayoutId: id, photos: [], decorations: [] }),
   setFilter: (filter) => set({ filter }),
   addPhoto: (photo) => set({ photos: [...get().photos, photo] }),
   replacePhotoAt: (index, photo) =>
@@ -137,12 +89,6 @@ export const usePhotoboothStore = create<Store>((set, get) => ({
   clearPhotos: () => set({ photos: [] }),
   addDecoration: (decoration) =>
     set({ decorations: [...get().decorations, decoration] }),
-  // updateDecoration: (id, patch) =>
-  //   set({
-  //     decorations: get().decorations.map((d) =>
-  //       d.id === id ? { ...d, ...patch } : d
-  //     ),
-  //   }),
   updateDecoration: (id, transform) =>
     set({
       decorations: get().decorations.map((d) =>

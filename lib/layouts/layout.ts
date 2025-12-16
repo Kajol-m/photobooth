@@ -16,31 +16,34 @@ export type LayoutConfig = {
   /** Optional: Force specific aspect ratio on the slots themselves via CSS */
   slotClass?: string;
   width?: number; // Optional fixed width for preview purposes
-  height?: number; // Optional fixed height for preview purposes    
+  height?: number; // Optional fixed height for preview purposes   
+  previewImage: string; 
 };
 
 export const LAYOUTS: LayoutConfig[] = [
   // 1. Single Portrait (4:5)
   {
     id: "single-portrait",
-    label: "Single (4:5)",
+    label: "Single Portrait",
     gridClass: "grid-cols-1 grid-rows-1",
     photoCount: 1,
     cameraRatio: 0.8, // 4:5
     slotClass: "aspect-[4/5]",
     width: 200,
-    height: 250
+    height: 300,
+    previewImage:"/assets/layout-previews/strip-1p.png"
   },
   // 2. Single Landscape (3:2)
   {
     id: "single-landscape",
-    label: "Single (3:2)",
+    label: "Single Landscape",
     gridClass: "grid-cols-1 grid-rows-1",
     photoCount: 1,
     cameraRatio: 1.5, // 3:2
     slotClass: "aspect-[3/2]",
-    width: 250,
-    height: 166
+    width: 300,
+    height: 250,
+    previewImage:"/assets/layout-previews/strip-1h.png"
   },
   // 3. Two Vertical (Strip of 2, Landscape photos)
   {
@@ -51,7 +54,8 @@ export const LAYOUTS: LayoutConfig[] = [
     cameraRatio: 1.5, // 3:2 photos
     slotClass: "aspect-[3/2]",
     width: 200,
-    height: 400
+    height: 310,
+    previewImage:"/assets/layout-previews/strip-2v.png"
   },
   // 4. Two Horizontal (Side-by-side of 2, Portrait photos)
   {
@@ -61,20 +65,22 @@ export const LAYOUTS: LayoutConfig[] = [
     photoCount: 2,
     cameraRatio: 0.8, // 4:5 photos
     slotClass: "aspect-[4/5]",
-    width: 400,
-    height: 300
+    width: 350,
+    height: 260,
+    previewImage:"/assets/layout-previews/strip-2h.png"
   },
-  // 5. Three Horizontal (Square)
-  {
-    id: "strip-3-horizontal",
-    label: "3-Photo Wide",
-    gridClass: "grid-cols-3 grid-rows-1 gap-1.5",
-    photoCount: 3,
-    cameraRatio: 1, // Square
-    slotClass: "aspect-square",
-    width: 600,
-    height: 200
-  },
+  // // 5. Three Horizontal (Square)
+  // {
+  //   id: "strip-3-horizontal",
+  //   label: "3-Photo Wide",
+  //   gridClass: "grid-cols-3 grid-rows-1 gap-1.5",
+  //   photoCount: 3,
+  //   cameraRatio: 1, // Square
+  //   slotClass: "aspect-square",
+  //   width: 350,
+  //   height: 95,
+  //   previewImage:"/assets/layout-previews/strip-3h.png"
+  // },
   // 6. Three Vertical (3:2 photos)
   {
     id: "strip-3-vertical",
@@ -84,7 +90,8 @@ export const LAYOUTS: LayoutConfig[] = [
     cameraRatio: 1.5, // 3:2 photos
     slotClass: "aspect-[3/2]",
     width: 200,
-    height: 600
+    height: 440,
+    previewImage:"/assets/layout-previews/strip-3v.png"
   },
   // 7. Four Grid (Square)
   {
@@ -94,19 +101,21 @@ export const LAYOUTS: LayoutConfig[] = [
     photoCount: 4,
     cameraRatio: 1, // Square
     slotClass: "aspect-square",
-    width: 400,
-    height:400
+    width: 350,
+    height:390,
+    previewImage:"/assets/layout-previews/strip-4s.png"
   },
   // 8. Four Grid (3:2 Landscape)
   {
     id: "grid-2x2-landscape",
-    label: "2x2 Landscape",
+    label: "4-Photo strip",
     gridClass: "grid-cols-1 grid-rows-4 gap-1.5",
     photoCount: 4,
     cameraRatio: 1.5, // 3:2
     slotClass: "aspect-[3/2]",
     width: 200,
-    height: 650
+    height: 585,
+    previewImage:"/assets/layout-previews/strip-4v.png"
 
   },
 ];

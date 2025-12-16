@@ -126,13 +126,6 @@ import { v4 as uuidv4 } from "uuid";
 // ... (Keep your existing `collection` array here) ...
 const collection = [
   {
-    name: "Popular",
-    value: [
-      "/assets/sea-stickers/bubbles.png",
-      "/assets/sea-stickers/dolphin.png",
-    ],
-  },
-  {
     name: "Sea",
     value: [
       "/assets/sea-stickers/boat.png",

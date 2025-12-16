@@ -16,13 +16,15 @@ const TextAndDatePicker = () => {
     setPhotoTraits({ timeOption: e.target.checked });
   };
 
-  const handleColorSelect = (color: "white" | "black" |"#F5F5DA") => {
+  const handleColorSelect = (color: "white" | "black" | "#F5F5DA" | "#CA152A") => {
     setPhotoTraits({ textColor: color });
   };
 
   return (
     <div className="p-4 flex flex-col gap-3 items-start bg-[#F5F5DA] w-full border-3 border-[#CA152A]">
-      <h2 className="text-xl font-semibold text-[#CA152A]">TEXT & DATE OPTIONS</h2>
+      <h2 className="text-xl font-semibold text-[#CA152A]">
+        TEXT & DATE OPTIONS
+      </h2>
 
       {/* Text Input with Color Picker */}
       <div className="w-full flex items-center justify-between gap-3">
@@ -44,6 +46,24 @@ const TextAndDatePicker = () => {
           <span className="text-xs text-[#CA152A] mb-1">Text Color</span>
           <div className="flex gap-2">
             <button
+              onClick={() => handleColorSelect("#F5F5DA")}
+              className={`w-6 h-6 rounded-full border ${
+                photoTraits.textColor === "#F5F5DA"
+                  ? "ring-2 ring-[#CA152A] scale-110"
+                  : "hover:scale-105"
+              }`}
+              style={{ backgroundColor: "#F5F5DA" }}
+            />
+             <button
+              onClick={() => handleColorSelect("#CA152A")}
+              className={`w-6 h-6 rounded-full border ${
+                photoTraits.textColor === "#CA152A"
+                  ? "ring-2 ring-[#CA152A] scale-110"
+                  : "hover:scale-105"
+              }`}
+              style={{ backgroundColor: "#CA152A" }}
+            />
+            <button
               onClick={() => handleColorSelect("black")}
               className={`w-6 h-6 rounded-full border ${
                 photoTraits.textColor === "black"
@@ -60,15 +80,6 @@ const TextAndDatePicker = () => {
                   : "hover:scale-105"
               }`}
               style={{ backgroundColor: "white" }}
-            />
-             <button
-              onClick={() => handleColorSelect("#F5F5DA")}
-              className={`w-6 h-6 rounded-full border${
-                photoTraits.textColor === "#F5F5DA"
-                  ? "ring-2 ring-[#CA152A] scale-110"
-                  : "hover:scale-105"
-              }`}
-              style={{ backgroundColor: "#F5F5DA" }}
             />
           </div>
         </div>
